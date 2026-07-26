@@ -1,0 +1,6 @@
+node_modules/
+dist/
+tools/shots/
+tools/_debug.mjs
+*.log
+.DS_Store

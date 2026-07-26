@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0a0d12" />
+  <title>OVERRIDE — Tactical FPS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="./src/ui/hud.css" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="game-canvas"></canvas>
+
+    <!-- HUD is injected by src/ui/HUD.js -->
+    <div id="hud"></div>
+
+    <!-- Loading / Start overlay -->
+    <div id="overlay" class="overlay">
+      <div class="overlay-inner">
+        <div class="logo">
+          <span class="logo-main">OVERRIDE</span>
+          <span class="logo-sub">TACTICAL RESPONSE</span>
+        </div>
+        <div id="loader" class="loader">
+          <div class="loader-bar"><div id="loader-fill" class="loader-fill"></div></div>
+          <div id="loader-text" class="loader-text">INITIALIZING SYSTEMS…</div>
+        </div>
+        <button id="start-btn" class="start-btn" disabled>
+          <span class="start-btn-label">DEPLOY</span>
+          <span class="start-btn-hint">Click to lock pointer</span>
+        </button>
+        <div class="controls-hint">
+          <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move</div>
+          <div><kbd>SHIFT</kbd> Sprint &nbsp; <kbd>CTRL</kbd> Crouch &nbsp; <kbd>SPACE</kbd> Jump</div>
+          <div><kbd>LMB</kbd> Fire &nbsp; <kbd>RMB</kbd> Aim &nbsp; <kbd>R</kbd> Reload &nbsp; <kbd>1-3</kbd> Weapons</div>
+          <div><kbd>ESC</kbd> Release pointer</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="pause" class="pause hidden">
+      <div class="pause-inner">
+        <div class="pause-title">PAUSED</div>
+        <div class="pause-hint">Click to resume</div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
