@@ -32,6 +32,8 @@ export class Game {
     this.input = new Input(canvas);
 
     this.env = new Environment(this.scene, this.renderer);
+    // share the sky IBL with the weapon scene so gun metals get real reflections
+    this.vmScene.environment = this.scene.environment;
     this.level = new Level(this.scene, this.forge);
     this.player = new Player(this.camera, this.level, this.input);
     this.viewModel = new ViewModel(this.forge, this.audio);

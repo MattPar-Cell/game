@@ -36,11 +36,13 @@ export class ViewModel {
   }
 
   _gunMetal(tint, rough = 0.35) {
-    return this.forge.metal({ repeat: 2, tint, seed: 2100 + Math.floor(rough * 100), rough });
+    // brighter tints + env reflections read as real gunmetal
+    const t = tint.map((c) => Math.min(1, c * 1.5 + 0.06));
+    return this.forge.metal({ repeat: 2, tint: t, seed: 2100 + Math.floor(rough * 100), rough });
   }
 
-  _polymer(color = 0x14171c) {
-    return new THREE.MeshStandardMaterial({ color, roughness: 0.62, metalness: 0.08 });
+  _polymer(color = 0x2e333c) {
+    return new THREE.MeshStandardMaterial({ color, roughness: 0.5, metalness: 0.15, envMapIntensity: 1.0 });
   }
 
   _buildAll() {
@@ -67,7 +69,7 @@ export class ViewModel {
 
   _buildRifle() {
     const g = new THREE.Group();
-    const body = this._polymer(0x12151a);
+    const body = this._polymer(0x2c313a);
     const metal = this._gunMetal([0.22, 0.23, 0.25], 0.3);
     const dark = this._gunMetal([0.1, 0.1, 0.11], 0.5);
 
@@ -112,7 +114,7 @@ export class ViewModel {
 
   _buildSMG() {
     const g = new THREE.Group();
-    const body = this._polymer(0x181b20);
+    const body = this._polymer(0x30353e);
     const metal = this._gunMetal([0.2, 0.21, 0.23], 0.32);
     const dark = this._gunMetal([0.09, 0.09, 0.1], 0.5);
 
@@ -138,7 +140,7 @@ export class ViewModel {
 
   _buildPistol() {
     const g = new THREE.Group();
-    const body = this._polymer(0x15181d);
+    const body = this._polymer(0x2d323b);
     const metal = this._gunMetal([0.18, 0.19, 0.21], 0.28);
     const dark = this._gunMetal([0.08, 0.08, 0.09], 0.45);
 

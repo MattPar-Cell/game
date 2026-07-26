@@ -109,16 +109,16 @@ export class Environment {
     this.sun = sun;
 
     // ---- Sky fill (hemisphere) for realistic ambient bounce
-    const hemi = new THREE.HemisphereLight(0xbcd4ff, 0x6a5940, 1.25);
+    const hemi = new THREE.HemisphereLight(0xc4d2e0, 0x7a6748, 1.15);
     this.scene.add(hemi);
 
     // ---- Warm bounce fill from the "ground" (opposite the sun)
-    const fill = new THREE.DirectionalLight(0xffd9a0, 0.6);
+    const fill = new THREE.DirectionalLight(0xffd9a0, 0.65);
     fill.position.set(-0.5, 0.25, -0.6).multiplyScalar(60);
     this.scene.add(fill);
 
-    // ---- Low ambient floor so nothing crushes to pure black
-    this.scene.add(new THREE.AmbientLight(0x2a3340, 0.6));
+    // ---- Warm ambient floor so undersides/interiors never crush to black
+    this.scene.add(new THREE.AmbientLight(0x4a4436, 0.9));
 
     // ---- Atmospheric fog for depth
     this.scene.fog = new THREE.FogExp2(0xcfc7b4, 0.0052);

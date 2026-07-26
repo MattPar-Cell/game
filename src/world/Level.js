@@ -81,7 +81,7 @@ export class Level {
     }
 
     // ---- Buildings (blockout with detailed materials)
-    const bMat = F.concrete({ repeat: 4, color: 0.58, seed: 777 });
+    const bMat = F.concrete({ repeat: 2, color: 0.58, seed: 777 });
     const trimMat = F.metal({ repeat: 2, tint: [0.3, 0.32, 0.35], seed: 888, rough: 0.5 });
     this._building(-52, -40, 24, 14, 18, bMat, trimMat);
     this._building(50, -46, 20, 10, 22, bMat, trimMat);
@@ -130,6 +130,9 @@ export class Level {
     const barrelSpots = [[-38, -8], [-36, -9], [-37, -7], [42, 24], [40, 26], [12, 34]];
     for (const [x, z] of barrelSpots) this._barrel(x, z, barrelMat);
 
+    // ---- Scattered rocks & rubble to break the flat ground / hide tiling
+    this._scatterDebris(F);
+
     // ---- Spawn points for enemies (around the perimeter / behind cover)
     this.spawnPoints = [
       new THREE.Vector3(-70, 0, -70), new THREE.Vector3(70, 0, -70),
@@ -147,21 +150,60 @@ export class Level {
   }
 
   _building(x, z, w, d, h, bodyMat, trimMat) {
-    // main body (hollow feel via trim)
+    // main mass
     this._box(w, h, d, bodyMat, x, h / 2, z);
-    // roof trim
-    this._box(w + 1, 0.6, d + 1, trimMat, x, h + 0.3, z, { collide: false });
-    // door recess (emissive interior glow)
-    const glow = this.forge.emissive(0xffcf8a, 1.4);
-    this._box(2.4, 3.2, 0.3, glow, x, 1.6, z + d / 2 + 0.05, { collide: false, cast: false });
-    // windows
-    const glass = this.forge.glass();
-    for (let i = -1; i <= 1; i++) {
-      this._box(1.6, 1.4, 0.2, glass, x + i * 4.5, h * 0.62, z + d / 2 + 0.06, { collide: false, cast: false });
+    // setback secondary mass on the roof — breaks the flat silhouette
+    const w2 = w * 0.55, d2 = d * 0.55, h2 = h * 0.32;
+    this._box(w2, h2, d2, bodyMat, x - w * 0.14, h + h2 / 2, z - d * 0.12, { collide: false });
+    // base plinth + roof parapet (reads as beveled trim, catches edge light)
+    this._box(w + 0.5, 0.7, d + 0.5, trimMat, x, 0.35, z, { collide: false });
+    this._box(w + 0.4, 0.55, d + 0.4, trimMat, x, h + 0.28, z, { collide: false });
+    this._box(w2 + 0.3, 0.35, d2 + 0.3, trimMat, x - w * 0.14, h + h2 + 0.15, z - d * 0.12, { collide: false });
+    // corner pilasters
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+      this._box(0.45, h, 0.45, trimMat, x + sx * (w / 2 - 0.05), h / 2, z + sz * (d / 2 - 0.05), { collide: false });
     }
-    // AC unit / roof detail
-    const acMat = this.forge.metal({ repeat: 1, tint: [0.5, 0.5, 0.52], seed: 1201, rough: 0.4 });
-    this._box(2.2, 1.2, 2.2, acMat, x + w / 4, h + 0.9, z - d / 4, { collide: false });
+
+    // ---- facade windows (recessed frame + dark/lit glass) on all 4 faces
+    const frameMat = trimMat;
+    const darkGlass = this._winDark || (this._winDark = new THREE.MeshStandardMaterial({
+      color: 0x0a0e13, roughness: 0.18, metalness: 0.55, envMapIntensity: 1.2,
+    }));
+    const rows = Math.max(1, Math.floor((h - 3) / 3.2));
+    const place = (fw, cx, cz, nx, nz) => {
+      const cols = Math.max(1, Math.floor((fw - 1.5) / 2.6));
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const along = (c - (cols - 1) / 2) * 2.6;
+          const wy = 2.6 + r * 3.2;
+          const px = cx + (-nz) * along + nx * 0.06;
+          const pz = cz + (nx) * along + nz * 0.06;
+          const lit = Math.random() < 0.3;
+          const gm = lit ? this.forge.emissive(0xffcb82, 1.1) : darkGlass;
+          // frame
+          this._box(Math.abs(nx) ? 0.22 : 1.5, 1.7, Math.abs(nz) ? 0.22 : 1.5, frameMat, px, wy, pz, { collide: false, cast: false });
+          // glass slightly inset
+          const gx = cx + (-nz) * along + nx * -0.02;
+          const gz = cz + (nx) * along + nz * -0.02;
+          this._box(Math.abs(nx) ? 0.1 : 1.2, 1.35, Math.abs(nz) ? 0.1 : 1.2, gm, gx, wy, gz, { collide: false, cast: false });
+        }
+      }
+    };
+    place(w, x, z + d / 2, 0, 1);
+    place(w, x, z - d / 2, 0, -1);
+    place(d, x + w / 2, z, 1, 0);
+    place(d, x - w / 2, z, -1, 0);
+
+    // door recess with warm interior glow
+    const glow = this.forge.emissive(0xffcf8a, 1.3);
+    this._box(2.4, 3.2, 0.2, frameMat, x, 1.6, z + d / 2 + 0.04, { collide: false, cast: false });
+    this._box(2.0, 2.9, 0.12, glow, x, 1.5, z + d / 2 + 0.1, { collide: false, cast: false });
+
+    // rooftop AC units + vent pipe greebles
+    const acMat = this.forge.metal({ repeat: 1, tint: [0.42, 0.43, 0.45], seed: 1201, rough: 0.45 });
+    this._box(2.0, 1.1, 1.6, acMat, x + w / 4, h + 0.55, z + d / 4, { collide: false });
+    this._box(0.35, 2.2, 0.35, acMat, x - w / 3, h + 1.1, z + d / 3, { collide: false });
+    this._box(0.35, 1.4, 0.35, acMat, x - w / 3 + 0.5, h + 0.7, z + d / 3, { collide: false });
   }
 
   _tower(x, z, F) {
@@ -169,18 +211,23 @@ export class Level {
     const steelMat = F.metal({ repeat: 3, tint: [0.28, 0.3, 0.33], seed: 1302, rough: 0.45 });
     // base
     this._box(8, 14, 8, bodyMat, x, 7, z);
-    // observation deck
+    // observation deck + underside soffit (so it isn't a black slab)
     this._box(12, 1, 12, steelMat, x, 14.5, z);
-    // railings (emissive tech trim)
-    const trim = F.emissive(0x33e0c0, 2.2);
-    this._box(12, 0.15, 0.2, trim, x, 15.6, z + 6, { collide: false, cast: false });
-    this._box(12, 0.15, 0.2, trim, x, 15.6, z - 6, { collide: false, cast: false });
-    this._box(0.2, 0.15, 12, trim, x + 6, 15.6, z, { collide: false, cast: false });
-    this._box(0.2, 0.15, 12, trim, x - 6, 15.6, z, { collide: false, cast: false });
-    // antenna
+    this._box(11, 0.3, 11, bodyMat, x, 13.9, z, { collide: false });
+    // painted metal railings (top rail + posts) — no neon
+    const rail = steelMat;
+    for (const [dx, dz, rw, rd] of [[0, 6, 12, 0.16], [0, -6, 12, 0.16], [6, 0, 0.16, 12], [-6, 0, 0.16, 12]]) {
+      this._box(rw, 0.14, rd, rail, x + dx, 16.1, z + dz, { collide: false });
+      for (let i = -2; i <= 2; i++) {
+        const px = x + dx + (rd > rw ? 0 : i * 2.6);
+        const pz = z + dz + (rd > rw ? i * 2.6 : 0);
+        this._box(0.1, 1.5, 0.1, rail, px, 15.35, pz, { collide: false });
+      }
+    }
+    // antenna mast + small red aviation beacon (kept tiny/plausible)
     this._box(0.3, 8, 0.3, steelMat, x + 4, 19, z + 4, { collide: false });
-    const beacon = F.emissive(0xff3b4e, 3.0);
-    this._box(0.5, 0.5, 0.5, beacon, x + 4, 23.2, z + 4, { collide: false, cast: false });
+    const beacon = F.emissive(0xff3b4e, 2.4);
+    this._box(0.28, 0.28, 0.28, beacon, x + 4, 23.1, z + 4, { collide: false, cast: false });
   }
 
   _container(x, z, rotY, col, F, seed, yBase = 0) {
@@ -191,16 +238,23 @@ export class Level {
 
   _sandbagLine(x, z, rot, count, mat) {
     const group = new THREE.Group();
-    for (let i = 0; i < count; i++) {
-      const bag = new THREE.Mesh(new THREE.CapsuleGeometry(0.35, 0.7, 4, 8), mat);
-      bag.rotation.z = Math.PI / 2;
-      bag.position.set((i - count / 2) * 0.85, 0.35, 0);
-      bag.castShadow = bag.receiveShadow = true;
-      // second row on top, offset
-      const bag2 = bag.clone();
-      bag2.position.y = 0.95;
-      bag2.position.x += 0.42;
-      group.add(bag, bag2);
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    // three staggered rows of individually-varied bags for a lumpy wall
+    for (let row = 0; row < 3; row++) {
+      const y = 0.32 + row * 0.5;
+      const offX = (row % 2) * 0.42;
+      const n = count - row;
+      for (let i = 0; i < n; i++) {
+        const rad = rnd(0.28, 0.36), len = rnd(0.55, 0.78);
+        const bag = new THREE.Mesh(new THREE.CapsuleGeometry(rad, len, 5, 10), mat);
+        bag.rotation.z = Math.PI / 2 + rnd(-0.12, 0.12);
+        bag.rotation.y = rnd(-0.15, 0.15);
+        bag.position.set((i - n / 2) * 0.82 + offX, y + rnd(-0.04, 0.04), rnd(-0.06, 0.06));
+        // squash slightly so bags sag rather than read as smooth tubes
+        bag.scale.set(1, rnd(0.82, 0.95), rnd(0.9, 1.05));
+        bag.castShadow = bag.receiveShadow = true;
+        group.add(bag);
+      }
     }
     group.position.set(x, 0, z);
     group.rotation.y = rot;
@@ -209,6 +263,48 @@ export class Level {
     group.updateWorldMatrix(true, true);
     const box = new THREE.Box3().setFromObject(group);
     this.colliders.push({ min: box.min, max: box.max });
+  }
+
+  _scatterDebris(F) {
+    const rockMat = F.concrete({ repeat: 1, color: 0.42, seed: 2201 });
+    const sandRockMat = F.sand({ repeat: 1, seed: 2202 });
+    // deform an icosahedron once, reuse for all rocks (cheap variety via scale)
+    const baseGeo = new THREE.IcosahedronGeometry(1, 1);
+    const pos = baseGeo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const f = 0.7 + Math.random() * 0.5;
+      pos.setXYZ(i, pos.getX(i) * f, pos.getY(i) * f, pos.getZ(i) * f);
+    }
+    baseGeo.computeVertexNormals();
+
+    const group = new THREE.Group();
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    for (let i = 0; i < 70; i++) {
+      // bias away from dead center (courtyard), keep inside walls
+      let rx, rz;
+      do { rx = rnd(-85, 85); rz = rnd(-85, 85); } while (Math.hypot(rx, rz) < 10);
+      const mat = Math.random() < 0.5 ? rockMat : sandRockMat;
+      const rock = new THREE.Mesh(baseGeo, mat);
+      const s = rnd(0.15, 0.7);
+      rock.scale.set(s * rnd(0.8, 1.3), s * rnd(0.5, 0.9), s * rnd(0.8, 1.3));
+      rock.position.set(rx, s * 0.35, rz);
+      rock.rotation.set(rnd(0, 6), rnd(0, 6), rnd(0, 6));
+      rock.castShadow = rock.receiveShadow = true;
+      group.add(rock);
+    }
+    // gravel piles (clusters of tiny rocks) near a few cover points
+    for (const [cx, cz] of [[16, -7], [-31, 5], [24, 18]]) {
+      for (let i = 0; i < 8; i++) {
+        const rock = new THREE.Mesh(baseGeo, rockMat);
+        const s = rnd(0.1, 0.28);
+        rock.scale.setScalar(s);
+        rock.position.set(cx + rnd(-1.2, 1.2), s * 0.4, cz + rnd(-1.2, 1.2));
+        rock.rotation.set(rnd(0, 6), rnd(0, 6), rnd(0, 6));
+        rock.castShadow = rock.receiveShadow = true;
+        group.add(rock);
+      }
+    }
+    this.root.add(group);
   }
 
   _barrel(x, z, mat) {

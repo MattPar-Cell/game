@@ -19,11 +19,11 @@ const GradeShader = {
   uniforms: {
     tDiffuse: { value: null },
     uTime: { value: 0 },
-    uVignette: { value: 0.42 },
-    uChroma: { value: 0.0006 },
-    uGrain: { value: 0.018 },
-    uContrast: { value: 1.05 },
-    uSaturation: { value: 1.1 },
+    uVignette: { value: 0.4 },
+    uChroma: { value: 0.0009 },
+    uGrain: { value: 0.016 },
+    uContrast: { value: 1.13 },
+    uSaturation: { value: 1.14 },
     uHurt: { value: 0.0 },
     uResolution: { value: new THREE.Vector2(1, 1) },
   },
@@ -44,22 +44,27 @@ const GradeShader = {
       vec2 center = uv - 0.5;
       float r = length(center);
 
-      // chromatic aberration scaled toward edges
-      float ca = uChroma * (0.3 + r * 2.0);
+      // chromatic aberration — edge-only (zero at center), gentle
+      float ca = uChroma * r * r * 3.0;
       vec2 dir = normalize(center + 1e-5);
       vec3 col;
       col.r = texture2D(tDiffuse, uv - dir * ca).r;
       col.g = texture2D(tDiffuse, uv).g;
       col.b = texture2D(tDiffuse, uv + dir * ca).b;
 
-      // filmic contrast around 0.5
-      col = (col - 0.5) * uContrast + 0.5;
+      // filmic contrast around 0.42 (crushed warm shadow toe)
+      col = (col - 0.42) * uContrast + 0.42;
+      col = max(col, 0.0);
+      // unified warm desert grade: warm the shadows, keep highlights neutral
+      float sh = 1.0 - smoothstep(0.0, 0.5, dot(col, vec3(0.333)));
+      col *= mix(vec3(1.0), vec3(1.07, 1.0, 0.88), sh * 0.8);
+      col *= vec3(1.02, 1.0, 0.97);
       // saturation
       float luma = dot(col, vec3(0.2126, 0.7152, 0.0722));
       col = mix(vec3(luma), col, uSaturation);
 
       // vignette
-      float vig = smoothstep(0.9, 0.25, r);
+      float vig = smoothstep(0.95, 0.3, r);
       col *= mix(1.0, vig, uVignette);
 
       // hurt flash (red radial pulse)
@@ -71,6 +76,10 @@ const GradeShader = {
       float grainAmt = uGrain * smoothstep(0.0, 0.18, lum2);
       float g = hash(floor(uv * uResolution * 0.5) + fract(uTime) * 137.0);
       col += (g - 0.5) * grainAmt;
+
+      // ordered dither to kill sky/gradient banding (always on, ~1 LSB)
+      float d = hash(uv * uResolution + 0.5) - 0.5;
+      col += d / 255.0;
 
       gl_FragColor = vec4(col, 1.0);
     }
@@ -99,14 +108,14 @@ export class PostFX {
     this.gtao.output = GTAOPass.OUTPUT.Default;
     if (this.gtao.updateGtaoMaterial) {
       this.gtao.updateGtaoMaterial({
-        radius: 0.5, distanceExponent: 1, thickness: 1,
-        scale: 1, samples: 16, distanceFallOff: 1, screenSpaceRadius: false,
+        radius: 2.0, distanceExponent: 1, thickness: 1,
+        scale: 1.3, samples: 16, distanceFallOff: 1, screenSpaceRadius: false,
       });
     }
     this.composer.addPass(this.gtao);
 
-    // Bloom
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.55, 0.6, 0.82);
+    // Bloom — subtle, high-threshold so only the sun / muzzle flash blooms
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.32, 0.7, 0.9);
     this.composer.addPass(this.bloom);
 
     // Grade
