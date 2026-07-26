@@ -20,7 +20,7 @@ const GradeShader = {
     tDiffuse: { value: null },
     uTime: { value: 0 },
     uVignette: { value: 0.4 },
-    uChroma: { value: 0.0009 },
+    uChroma: { value: 0.0005 },
     uGrain: { value: 0.016 },
     uContrast: { value: 1.13 },
     uSaturation: { value: 1.14 },

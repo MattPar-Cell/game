@@ -93,9 +93,13 @@ export class Game {
     const vmKey = new THREE.DirectionalLight(0xffffff, 2.4);
     vmKey.position.set(0.4, 0.8, 0.6);
     this.vmScene.add(vmKey);
-    const vmRim = new THREE.DirectionalLight(0x88aaff, 1.0);
-    vmRim.position.set(-0.6, 0.2, -0.5);
+    const vmRim = new THREE.DirectionalLight(0xaec4ff, 1.8);
+    vmRim.position.set(-0.7, 0.35, -0.6);
     this.vmScene.add(vmRim);
+    // warm kicker from lower-front to catch the gun's bottom edges
+    const vmKick = new THREE.DirectionalLight(0xffd9a8, 0.7);
+    vmKick.position.set(0.3, -0.5, 0.4);
+    this.vmScene.add(vmKick);
   }
 
   _initGameState() {

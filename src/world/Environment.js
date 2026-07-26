@@ -35,11 +35,11 @@ const SKY_FRAG = /* glsl */`
     // ground / below horizon
     vec3 col = h < 0.0 ? mix(uHorizon, uGround, clamp(-h * 3.0, 0.0, 1.0)) : sky;
 
-    // sun disc + glow
+    // sun disc + halo — tighter and less blown out
     float sd = max(dot(dir, normalize(uSunDir)), 0.0);
-    float disc = smoothstep(1.0 - uSunSize, 1.0 - uSunSize * 0.4, sd);
-    float glow = pow(sd, 180.0) * 0.6 + pow(sd, 8.0) * 0.25;
-    col += uSunColor * (disc * 6.0 + glow);
+    float disc = smoothstep(1.0 - uSunSize, 1.0 - uSunSize * 0.5, sd);
+    float glow = pow(sd, 350.0) * 0.5 + pow(sd, 40.0) * 0.18 + pow(sd, 6.0) * 0.08;
+    col += uSunColor * (disc * 3.2 + glow);
 
     // subtle horizon haze band
     float haze = exp(-abs(h) * 8.0) * 0.15;
@@ -121,7 +121,7 @@ export class Environment {
     this.scene.add(new THREE.AmbientLight(0x4a4436, 0.9));
 
     // ---- Atmospheric fog for depth
-    this.scene.fog = new THREE.FogExp2(0xcfc7b4, 0.0052);
+    this.scene.fog = new THREE.FogExp2(0xd2cab6, 0.006);
 
     // ---- Ambient god-ray-ish volumetric sun sprite
     const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({

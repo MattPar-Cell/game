@@ -175,8 +175,8 @@ export class AssetForge {
         // SPARSE hairline cracks: an iso-line, but only where a low-freq
         // mask is high, so cracks appear as isolated fractures not a net.
         const crackMask = F(x * 0.008, y * 0.008 + 40, 2);
-        const crackLine = Math.abs(F(x * 0.028, y * 0.028, 3) - 0.5) < 0.012;
-        const crack = (crackLine && crackMask > 0.66) ? -0.14 : 0;
+        const crackLine = Math.abs(F(x * 0.04, y * 0.04, 4) - 0.5) < 0.005;
+        const crack = (crackLine && crackMask > 0.78) ? -0.08 : 0;
         let c = base + grain + mottle - stain + speck + crack;
         const rough = 0.86 + grain * 0.4 + stain * 0.2;
         return {
@@ -241,18 +241,21 @@ export class AssetForge {
   sand({ repeat = 20, seed = 404 } = {}) {
     return this._mat(`sand-${repeat}-${seed}`, () => {
       const maps = forgePBR(512, seed, (x, y, u, v, noise, F) => {
-        const ripple = (Math.sin(x * 0.4 + F(x * 0.05, y * 0.05, 3) * 3) * 0.5 + 0.5);
-        const grain = F(x * 0.4, y * 0.4, 5);
-        let c = 0.52 + ripple * 0.08 + grain * 0.06;
+        // lower-frequency ripples with heavy phase break to kill the periodic
+        // specular glints that otherwise line up along the horizon
+        const ripple = (Math.sin(x * 0.18 + F(x * 0.03, y * 0.05, 4) * 7) * 0.5 + 0.5);
+        const grain = F(x * 0.22, y * 0.22, 4);
+        const dune = F(x * 0.02, y * 0.02, 3);
+        let c = 0.5 + ripple * 0.06 + grain * 0.05 + (dune - 0.5) * 0.08;
         return {
-          r: c * 1.02, g: c * 0.92, b: c * 0.68,
-          height: 0.5 + ripple * 1.2 + grain,
-          rough: 0.95, ao: 1 - (1 - ripple) * 0.15, metal: 0,
+          r: c * 1.03, g: c * 0.93, b: c * 0.69,
+          height: 0.5 + ripple * 0.8 + grain * 0.6,
+          rough: 0.95, ao: 1 - (1 - ripple) * 0.12, metal: 0,
         };
-      }, { repeat, normalStrength: 1.5 });
+      }, { repeat, normalStrength: 1.0, aniso: 16 });
       return new THREE.MeshStandardMaterial({
         ...maps, roughness: 1, metalness: 0,
-        normalScale: new THREE.Vector2(0.6, 0.6),
+        normalScale: new THREE.Vector2(0.4, 0.4),
       });
     });
   }
@@ -274,12 +277,15 @@ export class AssetForge {
           g: tint[1] * (1 - rust) + 0.24 * rust + rivet + scr,
           b: tint[2] * (1 - rust) + 0.14 * rust + rivet + scr,
           height: 0.35 + corr * 0.4 + rivet * 2,
-          rough: 0.45 + rust * 0.35, ao: 1 - rust * 0.25 - (1 - corr) * 0.08,
-          metal: 0.9 - rust * 0.45,
+          ao: 1 - rust * 0.25 - (1 - corr) * 0.08,
+          // painted steel: paint is dielectric (low metalness) so shadowed
+          // faces still catch diffuse skylight; rust patches turn metallic
+          rough: 0.5 + rust * 0.35,
+          metal: 0.1 + rust * 0.5,
         };
       }, { repeat, normalStrength: 3.0 });
       return new THREE.MeshStandardMaterial({
-        ...maps, roughness: 1, metalness: 1,
+        ...maps, roughness: 1, metalness: 1, envMapIntensity: 1.0,
         normalScale: new THREE.Vector2(1.1, 1.1),
       });
     });

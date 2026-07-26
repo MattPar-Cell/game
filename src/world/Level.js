@@ -47,7 +47,7 @@ export class Level {
     const F = this.forge;
 
     // ---- Ground plane (sand) with a subtle undulating heightfield look
-    const groundMat = F.sand({ repeat: 40 });
+    const groundMat = F.sand({ repeat: 26 });
     const groundGeo = new THREE.PlaneGeometry(400, 400, 1, 1);
     groundGeo.setAttribute('uv2', groundGeo.attributes.uv);
     const ground = new THREE.Mesh(groundGeo, groundMat);
@@ -66,8 +66,9 @@ export class Level {
     pad.receiveShadow = true;
     this.root.add(pad);
 
-    // ---- Perimeter wall
-    const wallMat = F.panel({ repeat: 1, tint: [0.42, 0.4, 0.34], seed: 512 });
+    // ---- Perimeter wall (matte concrete — a shiny riveted panel here read
+    // as a row of floating dashes on the horizon)
+    const wallMat = F.concrete({ repeat: 8, color: 0.5, seed: 512 });
     const WALL_H = 8, WALL_T = 1.5, EXT = 92;
     const wallSpec = [
       [EXT * 2, WALL_H, WALL_T, 0, WALL_H / 2, -EXT],
@@ -108,7 +109,7 @@ export class Level {
     this._container(-20, -18, 0, contColors[1], F, 651, 2.7);
 
     // ---- Sandbag emplacements
-    const bagMat = F.sand({ repeat: 2, seed: 909 });
+    const bagMat = new THREE.MeshStandardMaterial({ color: 0x9a8a62, roughness: 0.96, metalness: 0.0 });
     this._sandbagLine(-6, -8, 0, 6, bagMat);
     this._sandbagLine(10, 6, Math.PI / 2, 5, bagMat);
     this._sandbagLine(-14, 10, -Math.PI / 5, 4, bagMat);
@@ -166,8 +167,11 @@ export class Level {
 
     // ---- facade windows (recessed frame + dark/lit glass) on all 4 faces
     const frameMat = trimMat;
+    // glassy dark-blue — reflects the sky and self-glows faintly so window
+    // panes never collapse to pure #000 holes
     const darkGlass = this._winDark || (this._winDark = new THREE.MeshStandardMaterial({
-      color: 0x0a0e13, roughness: 0.18, metalness: 0.55, envMapIntensity: 1.2,
+      color: 0x1a2430, roughness: 0.12, metalness: 0.35,
+      emissive: 0x0b1420, emissiveIntensity: 0.5, envMapIntensity: 1.6,
     }));
     const rows = Math.max(1, Math.floor((h - 3) / 3.2));
     const place = (fw, cx, cz, nx, nz) => {
@@ -239,19 +243,25 @@ export class Level {
   _sandbagLine(x, z, rot, count, mat) {
     const group = new THREE.Group();
     const rnd = (a, b) => a + Math.random() * (b - a);
-    // three staggered rows of individually-varied bags for a lumpy wall
+    // rounded-cuboid bags, stacked brick-style and staggered per row so the
+    // emplacement reads as a real sandbag wall, not smooth tubes
+    const bagGeo = new THREE.BoxGeometry(0.68, 0.3, 0.44, 2, 2, 2);
+    // round the corners a touch by pushing verts inward
+    const p = bagGeo.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+      p.setXYZ(i, p.getX(i) * 0.94, p.getY(i) * 0.92, p.getZ(i) * 0.94);
+    }
+    bagGeo.computeVertexNormals();
     for (let row = 0; row < 3; row++) {
-      const y = 0.32 + row * 0.5;
-      const offX = (row % 2) * 0.42;
+      const y = 0.16 + row * 0.3;
+      const offX = (row % 2) * 0.36;
       const n = count - row;
       for (let i = 0; i < n; i++) {
-        const rad = rnd(0.28, 0.36), len = rnd(0.55, 0.78);
-        const bag = new THREE.Mesh(new THREE.CapsuleGeometry(rad, len, 5, 10), mat);
-        bag.rotation.z = Math.PI / 2 + rnd(-0.12, 0.12);
-        bag.rotation.y = rnd(-0.15, 0.15);
-        bag.position.set((i - n / 2) * 0.82 + offX, y + rnd(-0.04, 0.04), rnd(-0.06, 0.06));
-        // squash slightly so bags sag rather than read as smooth tubes
-        bag.scale.set(1, rnd(0.82, 0.95), rnd(0.9, 1.05));
+        const bag = new THREE.Mesh(bagGeo, mat);
+        bag.rotation.y = rnd(-0.1, 0.1);
+        bag.rotation.z = rnd(-0.06, 0.06);
+        bag.position.set((i - n / 2) * 0.72 + offX, y + rnd(-0.02, 0.02), rnd(-0.05, 0.05));
+        bag.scale.set(rnd(0.92, 1.05), rnd(0.9, 1.1), rnd(0.92, 1.08));
         bag.castShadow = bag.receiveShadow = true;
         group.add(bag);
       }
@@ -292,6 +302,27 @@ export class Level {
       rock.castShadow = rock.receiveShadow = true;
       group.add(rock);
     }
+    // sand drift + gravel along the paved courtyard edge to break the hard
+    // concrete↔sand seam the pad boundary otherwise creates
+    const pad = 40;
+    for (let i = 0; i < 120; i++) {
+      const t = rnd(-pad, pad);
+      const side = Math.floor(rnd(0, 4));
+      let px, pz;
+      const jitter = rnd(-1.6, 1.6);
+      if (side === 0) { px = t; pz = -pad + jitter; }
+      else if (side === 1) { px = t; pz = pad + jitter; }
+      else if (side === 2) { px = -pad + jitter; pz = t; }
+      else { px = pad + jitter; pz = t; }
+      const rock = new THREE.Mesh(baseGeo, sandRockMat);
+      const s = rnd(0.08, 0.26);
+      rock.scale.set(s * rnd(1.2, 2.2), s * rnd(0.3, 0.6), s * rnd(1.2, 2.2));
+      rock.position.set(px, s * 0.2, pz);
+      rock.rotation.set(rnd(0, 6), rnd(0, 6), rnd(0, 6));
+      rock.receiveShadow = true;
+      group.add(rock);
+    }
+
     // gravel piles (clusters of tiny rocks) near a few cover points
     for (const [cx, cz] of [[16, -7], [-31, 5], [24, 18]]) {
       for (let i = 0; i < 8; i++) {
