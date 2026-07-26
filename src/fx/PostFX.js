@@ -96,7 +96,13 @@ export class PostFX {
     const dpr = renderer.getPixelRatio();
     const w = size.x * dpr, h = size.y * dpr;
 
-    this.composer = new EffectComposer(renderer);
+    // HDR (half-float) pipeline so the sky gradient and bloom don't band
+    // through the 8-bit default render targets
+    const hdrTarget = new THREE.WebGLRenderTarget(w, h, {
+      type: THREE.HalfFloatType,
+      samples: 0,
+    });
+    this.composer = new EffectComposer(renderer, hdrTarget);
     this.composer.setPixelRatio(dpr);
     this.composer.setSize(size.x, size.y);
 

@@ -72,9 +72,11 @@ export class ViewModel {
     const body = this._polymer(0x2c313a);
     const metal = this._gunMetal([0.22, 0.23, 0.25], 0.3);
     const dark = this._gunMetal([0.1, 0.1, 0.11], 0.5);
+    // anodized-aluminium receiver: metallic so the sun throws a spec streak
+    const recv = this._gunMetal([0.17, 0.18, 0.2], 0.33);
 
-    // receiver
-    this._part(g, new THREE.BoxGeometry(0.09, 0.11, 0.5), body, 0, 0, 0);
+    // receiver (metal upper)
+    this._part(g, new THREE.BoxGeometry(0.09, 0.11, 0.5), recv, 0, 0, 0);
     // upper rail
     this._part(g, new THREE.BoxGeometry(0.07, 0.03, 0.46), dark, 0, 0.07, 0.02);
     // barrel

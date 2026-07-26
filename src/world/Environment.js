@@ -108,8 +108,9 @@ export class Environment {
     this.scene.add(sun.target);
     this.sun = sun;
 
-    // ---- Sky fill (hemisphere) for realistic ambient bounce
-    const hemi = new THREE.HemisphereLight(0xc4d2e0, 0x7a6748, 1.15);
+    // ---- Sky fill (hemisphere) — less blue up top so shaded ground doesn't
+    // go cold/blue against the warm sand
+    const hemi = new THREE.HemisphereLight(0xd2d6d4, 0x8a7550, 1.1);
     this.scene.add(hemi);
 
     // ---- Warm bounce fill from the "ground" (opposite the sun)

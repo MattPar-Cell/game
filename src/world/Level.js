@@ -57,7 +57,7 @@ export class Level {
     this.solidMeshes.push(ground);
 
     // Central paved courtyard
-    const padMat = F.concrete({ repeat: 12, color: 0.5 });
+    const padMat = F.concrete({ repeat: 6, color: 0.52 });
     const padGeo = new THREE.PlaneGeometry(80, 80);
     padGeo.setAttribute('uv2', padGeo.attributes.uv);
     const pad = new THREE.Mesh(padGeo, padMat);
@@ -69,6 +69,7 @@ export class Level {
     // ---- Perimeter wall (matte concrete — a shiny riveted panel here read
     // as a row of floating dashes on the horizon)
     const wallMat = F.concrete({ repeat: 8, color: 0.5, seed: 512 });
+    const wallTrim = F.concrete({ repeat: 2, color: 0.44, seed: 517 });
     const WALL_H = 8, WALL_T = 1.5, EXT = 92;
     const wallSpec = [
       [EXT * 2, WALL_H, WALL_T, 0, WALL_H / 2, -EXT],
@@ -79,6 +80,21 @@ export class Level {
     for (const [w, h, d, x, y, z] of wallSpec) {
       const panelMat = this._panelUV(wallMat, w, h);
       this._box(w, h, d, panelMat, x, y, z);
+      // parapet cap along the top edge
+      this._box(w + 0.2, 0.5, d + 0.2, wallTrim, x, h + 0.25, z, { collide: false });
+    }
+    // buttress pillars + occasional guard towers break the flat ribbon
+    const wallTrimMat = wallTrim;
+    const along = EXT - 4;
+    for (let i = -along; i <= along; i += 12) {
+      for (const [px, pz, ax] of [[i, -EXT, 0], [i, EXT, 0], [-EXT, i, 1], [EXT, i, 1]]) {
+        this._box(ax ? 2.2 : 1.2, WALL_H + 0.6, ax ? 1.2 : 2.2, wallTrimMat, px, (WALL_H + 0.6) / 2, pz, { collide: false });
+      }
+    }
+    // corner guard towers (taller mass) for silhouette interest
+    for (const [cx, cz] of [[-EXT, -EXT], [EXT, -EXT], [EXT, EXT], [-EXT, EXT]]) {
+      this._box(4, WALL_H + 5, 4, wallMat, cx, (WALL_H + 5) / 2, cz, { collide: false });
+      this._box(4.6, 0.5, 4.6, wallTrimMat, cx, WALL_H + 5.2, cz, { collide: false });
     }
 
     // ---- Buildings (blockout with detailed materials)
@@ -93,7 +109,7 @@ export class Level {
     this._tower(0, 0, F);
 
     // ---- Shipping containers (cover + verticality)
-    const contColors = [[0.55, 0.34, 0.14], [0.32, 0.5, 0.58], [0.62, 0.52, 0.2], [0.5, 0.2, 0.2]];
+    const contColors = [[0.46, 0.34, 0.26], [0.36, 0.46, 0.5], [0.52, 0.47, 0.34], [0.46, 0.28, 0.26]];
     const contLayout = [
       [-20, -18, 0], [-20, -12.5, 0], [-14.6, -15, Math.PI / 2],
       [22, 15, 0], [27.5, 15, 0], [24.7, 20.4, Math.PI / 2],
@@ -105,8 +121,8 @@ export class Level {
       this._container(c[0], c[1], c[2], col, F, 600 + i);
     });
 
-    // Stacked container = sniper perch
-    this._container(-20, -18, 0, contColors[1], F, 651, 2.7);
+    // Stacked container = sniper perch (sits flush on the one below)
+    this._container(-20, -18, 0, contColors[1], F, 651, 2.59);
 
     // ---- Sandbag emplacements
     const bagMat = new THREE.MeshStandardMaterial({ color: 0x9a8a62, roughness: 0.96, metalness: 0.0 });
@@ -115,7 +131,7 @@ export class Level {
     this._sandbagLine(-14, 10, -Math.PI / 5, 4, bagMat);
 
     // ---- Scattered crates
-    const crateMat = F.panel({ repeat: 1, tint: [0.5, 0.4, 0.22], seed: 333 });
+    const crateMat = F.panel({ repeat: 1, tint: [0.44, 0.38, 0.28], seed: 333 });
     const crateSpots = [
       [15, -8, 0.7], [17, -6, 0.7], [16, -7, 1.4],
       [-32, 4, 0.7], [-30, 6, 0.7], [-31, 5, 1.4],
@@ -127,7 +143,7 @@ export class Level {
     }
 
     // ---- Barrels (clustered)
-    const barrelMat = F.metal({ repeat: 2, tint: [0.5, 0.2, 0.12], seed: 1001, rough: 0.35 });
+    const barrelMat = F.metal({ repeat: 2, tint: [0.42, 0.26, 0.2], seed: 1001, rough: 0.52 });
     const barrelSpots = [[-38, -8], [-36, -9], [-37, -7], [42, 24], [40, 26], [12, 34]];
     for (const [x, z] of barrelSpots) this._barrel(x, z, barrelMat);
 
@@ -170,8 +186,8 @@ export class Level {
     // glassy dark-blue — reflects the sky and self-glows faintly so window
     // panes never collapse to pure #000 holes
     const darkGlass = this._winDark || (this._winDark = new THREE.MeshStandardMaterial({
-      color: 0x1a2430, roughness: 0.12, metalness: 0.35,
-      emissive: 0x0b1420, emissiveIntensity: 0.5, envMapIntensity: 1.6,
+      color: 0x24303e, roughness: 0.1, metalness: 0.3,
+      emissive: 0x101c2a, emissiveIntensity: 0.8, envMapIntensity: 1.8,
     }));
     const rows = Math.max(1, Math.floor((h - 3) / 3.2));
     const place = (fw, cx, cz, nx, nz) => {
@@ -215,9 +231,10 @@ export class Level {
     const steelMat = F.metal({ repeat: 3, tint: [0.28, 0.3, 0.33], seed: 1302, rough: 0.45 });
     // base
     this._box(8, 14, 8, bodyMat, x, 7, z);
-    // observation deck + underside soffit (so it isn't a black slab)
+    // observation deck + full concrete soffit (covers the whole underside so
+    // it never reads as a floating black slab from below)
     this._box(12, 1, 12, steelMat, x, 14.5, z);
-    this._box(11, 0.3, 11, bodyMat, x, 13.9, z, { collide: false });
+    this._box(12.4, 0.4, 12.4, bodyMat, x, 13.9, z, { collide: false });
     // painted metal railings (top rail + posts) — no neon
     const rail = steelMat;
     for (const [dx, dz, rw, rd] of [[0, 6, 12, 0.16], [0, -6, 12, 0.16], [6, 0, 0.16, 12], [-6, 0, 0.16, 12]]) {

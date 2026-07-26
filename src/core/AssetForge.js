@@ -166,21 +166,27 @@ export class AssetForge {
         const base = color;
         // fine surface grain
         const grain = (F(x * 0.09, y * 0.09, 6) - 0.5) * 0.09;
-        // broad tonal mottling (patchy pours)
-        const mottle = (F(x * 0.006, y * 0.006, 3) - 0.5) * 0.13;
-        // subtle darker staining
-        const stain = Math.pow(F(x * 0.02, y * 0.02, 3), 2.4) * 0.10;
+        // broad tonal mottling (patchy pours) — richer now
+        const mottle = (F(x * 0.005, y * 0.005, 4) - 0.5) * 0.18;
+        // dark oil / weathering stains
+        const stain = Math.pow(F(x * 0.018, y * 0.018, 3), 2.2) * 0.16;
+        // patchy sand-dust drift blown across the slab (warm, lighter)
+        const dust = Math.pow(F(x * 0.012, y * 0.012 + 17, 3), 1.8);
         // occasional aggregate specks
         const speck = noise(x * 1.3, y * 1.3) > 0.992 ? -0.12 : 0;
-        // SPARSE hairline cracks: an iso-line, but only where a low-freq
-        // mask is high, so cracks appear as isolated fractures not a net.
+        // SPARSE hairline cracks masked to isolated fractures
         const crackMask = F(x * 0.008, y * 0.008 + 40, 2);
         const crackLine = Math.abs(F(x * 0.04, y * 0.04, 4) - 0.5) < 0.005;
         const crack = (crackLine && crackMask > 0.78) ? -0.08 : 0;
         let c = base + grain + mottle - stain + speck + crack;
-        const rough = 0.86 + grain * 0.4 + stain * 0.2;
+        // blend toward warm sand where dust drift is strong
+        const d = Math.max(0, dust - 0.5) * 0.7;
+        const r = c * 1.0 * (1 - d) + (c + 0.06) * 1.08 * d;
+        const g = c * 0.98 * (1 - d) + (c + 0.03) * 0.98 * d;
+        const b = c * 0.95 * (1 - d) + (c - 0.04) * 0.78 * d;
+        const rough = 0.86 + grain * 0.4 + stain * 0.2 + d * 0.1;
         return {
-          r: c * 0.99, g: c * 0.98, b: c * 0.96,
+          r, g, b,
           height: 0.5 + grain * 1.2 + crack * 1.4 + speck * 2,
           rough: Math.min(1, rough), ao: 1 - stain * 0.5 + crack * 0.8, metal: 0,
         };
