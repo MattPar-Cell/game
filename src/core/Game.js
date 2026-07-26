@@ -120,6 +120,7 @@ export class Game {
 
   _wireCallbacks() {
     this.input.onLockChange = (locked) => {
+      if (this.input.fallbackLook) return; // no lock system → never auto-pause
       if (!locked && this.running && this.player.alive) {
         this.paused = true;
         this.callbacks.onPause?.();
@@ -127,6 +128,13 @@ export class Game {
         this.paused = false;
         this.callbacks.onResume?.();
       }
+    };
+    // When Pointer Lock is unavailable (embedded frame), keep playing with
+    // hover-look instead of showing the paused overlay.
+    this.input.onFallback = () => {
+      this.paused = false;
+      this.callbacks.onResume?.();
+      this.callbacks.onFallback?.();
     };
 
     this.enemies.onPlayerDamage = (dmg, from) => {

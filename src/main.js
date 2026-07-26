@@ -45,6 +45,7 @@ async function boot() {
     onPause: () => pauseEl.classList.remove('hidden'),
     onResume: () => pauseEl.classList.add('hidden'),
     onGameOver: (score, wave, kills) => showGameOver(score, wave, kills),
+    onFallback: () => showLookHint(),
   });
   await tick(45, steps[1]);
   await tick(62, steps[2]);
@@ -71,6 +72,19 @@ document.addEventListener('click', () => {
     game.resume();
   }
 });
+
+function showLookHint() {
+  if (document.getElementById('look-hint')) return;
+  const h = document.createElement('div');
+  h.id = 'look-hint';
+  h.textContent = 'MOUSE-LOOK: move the mouse over the view (pointer-lock is blocked in this frame). Open the game in its own tab for full mouse control.';
+  h.style.cssText = 'position:absolute;left:50%;top:14%;transform:translateX(-50%);z-index:30;' +
+    'font-family:var(--hud-font);font-size:13px;letter-spacing:1px;color:#ffb020;' +
+    'background:rgba(10,13,18,0.72);padding:8px 14px;border:1px solid rgba(255,176,32,0.4);' +
+    'border-radius:4px;max-width:520px;text-align:center;pointer-events:none;';
+  document.getElementById('app').appendChild(h);
+  setTimeout(() => { h.style.transition = 'opacity 1s'; h.style.opacity = '0'; setTimeout(() => h.remove(), 1000); }, 6000);
+}
 
 function showGameOver(score, wave, kills) {
   pauseEl.classList.remove('hidden');
