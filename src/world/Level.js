@@ -47,7 +47,7 @@ export class Level {
     const F = this.forge;
 
     // ---- Ground plane (sand) with a subtle undulating heightfield look
-    const groundMat = F.sand({ repeat: 26 });
+    const groundMat = F.sand({ repeat: 52 });
     const groundGeo = new THREE.PlaneGeometry(400, 400, 1, 1);
     groundGeo.setAttribute('uv2', groundGeo.attributes.uv);
     const ground = new THREE.Mesh(groundGeo, groundMat);
@@ -57,7 +57,7 @@ export class Level {
     this.solidMeshes.push(ground);
 
     // Central paved courtyard
-    const padMat = F.concrete({ repeat: 6, color: 0.52 });
+    const padMat = F.concrete({ repeat: 11, color: 0.52 });
     const padGeo = new THREE.PlaneGeometry(80, 80);
     padGeo.setAttribute('uv2', padGeo.attributes.uv);
     const pad = new THREE.Mesh(padGeo, padMat);

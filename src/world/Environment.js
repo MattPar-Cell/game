@@ -35,11 +35,11 @@ const SKY_FRAG = /* glsl */`
     // ground / below horizon
     vec3 col = h < 0.0 ? mix(uHorizon, uGround, clamp(-h * 3.0, 0.0, 1.0)) : sky;
 
-    // sun: small bright HDR core (blooms softly) + smooth multi-lobe halo
+    // sun: soft HDR core with a wide feathered edge + smooth multi-lobe halo
     float sd = max(dot(dir, normalize(uSunDir)), 0.0);
-    float core = smoothstep(1.0 - uSunSize, 1.0 - uSunSize * 0.6, sd);
-    float halo = pow(sd, 260.0) * 0.7 + pow(sd, 30.0) * 0.14 + pow(sd, 5.0) * 0.06;
-    col += uSunColor * (core * 5.0 + halo);
+    float core = smoothstep(1.0 - uSunSize * 1.6, 1.0 - uSunSize * 0.3, sd);
+    float halo = pow(sd, 200.0) * 0.5 + pow(sd, 28.0) * 0.16 + pow(sd, 5.0) * 0.07;
+    col += uSunColor * (core * 2.6 + halo);
 
     // subtle horizon haze band
     float haze = exp(-abs(h) * 8.0) * 0.15;
@@ -113,13 +113,14 @@ export class Environment {
     const hemi = new THREE.HemisphereLight(0xbcc6cc, 0x6e5c40, 0.6);
     this.scene.add(hemi);
 
-    // ---- Cool sky bounce fill opposite the sun (subtle, keeps shadow detail)
-    const fill = new THREE.DirectionalLight(0xafc2e0, 0.4);
-    fill.position.set(-0.5, 0.25, -0.6).multiplyScalar(60);
+    // ---- Warm ground-bounce fill opposite the sun so sunlit-sand shadows
+    // stay warm (a cool fill made shaded ground read as wet mud)
+    const fill = new THREE.DirectionalLight(0xffcf9a, 0.55);
+    fill.position.set(-0.5, 0.22, -0.6).multiplyScalar(60);
     this.scene.add(fill);
 
     // ---- Low warm ambient floor: keeps undersides readable without flattening
-    this.scene.add(new THREE.AmbientLight(0x40382a, 0.35));
+    this.scene.add(new THREE.AmbientLight(0x4a3f2c, 0.4));
 
     // ---- Atmospheric fog for depth
     this.scene.fog = new THREE.FogExp2(0xd2cab6, 0.006);

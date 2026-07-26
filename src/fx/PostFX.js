@@ -120,8 +120,9 @@ export class PostFX {
     }
     this.composer.addPass(this.gtao);
 
-    // Bloom — subtle, high-threshold so only the sun / muzzle flash blooms
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.32, 0.7, 0.9);
+    // Bloom — subtle, wide radius, high-threshold so only the sun / muzzle
+    // flash blooms and the sun's edge feathers softly
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.4, 0.9, 0.88);
     this.composer.addPass(this.bloom);
 
     // Grade

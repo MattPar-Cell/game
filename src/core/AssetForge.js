@@ -251,11 +251,12 @@ export class AssetForge {
         // specular glints that otherwise line up along the horizon
         const ripple = (Math.sin(x * 0.18 + F(x * 0.03, y * 0.05, 4) * 7) * 0.5 + 0.5);
         const grain = F(x * 0.22, y * 0.22, 4);
+        const fine = (noise(x * 1.3, y * 1.3) - 0.5);   // per-grain sparkle
         const dune = F(x * 0.02, y * 0.02, 3);
-        let c = 0.5 + ripple * 0.06 + grain * 0.05 + (dune - 0.5) * 0.08;
+        let c = 0.5 + ripple * 0.06 + grain * 0.05 + (dune - 0.5) * 0.08 + fine * 0.05;
         return {
           r: c * 1.03, g: c * 0.93, b: c * 0.69,
-          height: 0.5 + ripple * 0.8 + grain * 0.6,
+          height: 0.5 + ripple * 0.8 + grain * 0.6 + fine * 0.5,
           rough: 0.95, ao: 1 - (1 - ripple) * 0.12, metal: 0,
         };
       }, { repeat, normalStrength: 1.0, aniso: 16 });
