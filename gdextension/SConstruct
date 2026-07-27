@@ -1,0 +1,29 @@
+#!/usr/bin/env python
+# Build the OVERRIDE GDExtension. Requires the godot-cpp bindings checked out
+# at ./godot-cpp on a branch matching your Godot version (see README).
+#
+#   scons target=template_debug     # or target=template_release
+#
+# Output goes to demo/bin/ where demo/override.gdextension expects it.
+
+import os
+
+env = SConscript("godot-cpp/SConstruct")
+
+env.Append(CPPPATH=["src/"])
+sources = Glob("src/*.cpp")
+
+if env["platform"] == "macos":
+    library = env.SharedLibrary(
+        "demo/bin/liboverride.{}.{}.framework/liboverride.{}.{}".format(
+            env["platform"], env["target"], env["platform"], env["target"]
+        ),
+        source=sources,
+    )
+else:
+    library = env.SharedLibrary(
+        "demo/bin/liboverride{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),
+        source=sources,
+    )
+
+Default(library)

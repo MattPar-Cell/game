@@ -1,0 +1,12 @@
+# godot-cpp is fetched separately (see README) — don't vendor it here
+godot-cpp/
+
+# build artifacts
+*.os
+*.obj
+*.o
+*.a
+*.lib
+demo/bin/
+.sconsign.dblite
+demo/.godot/
